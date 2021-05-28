@@ -1,0 +1,295 @@
+"""
+This program takes an image and generates a reflection.
+The top half of the generated image is the same as the original.
+The bottom half is the mirror reflection of the top half.
+"""
+from PIL import Image, ImageFilter
+import numpy as np
+import cv2
+import math
+from simpleimage import SimpleImage
+
+
+def main():
+    # Get file and load image
+    
+    print("Welcome to the my Lite Photoshop!")
+    filename = get_file() 
+
+    while True:
+        function = get_func()
+        list = [1,2,3,4,5,6]
+        if function in list:
+            image = SimpleImage(filename)
+            image.show()
+            if function == 1:
+                image = blur(image)
+            elif function == 2:
+                image = grayscale(image)
+            elif function == 3:
+                image = edges(image)
+            elif function == 4:
+                image = rotate(image)
+            elif function == 5:
+                image = invert(image)
+            elif function == 6:
+                image = sepia(image)
+
+        elif function == 7:
+            image = Image.open(filename)
+            image.show()
+            # Apply emboss filter on to the image
+            if function == 7:
+                image = image.filter(ImageFilter.EMBOSS)
+                # Display the embossed image
+
+        else:
+            print("Program ended")
+            break
+            
+        image.show()
+    
+
+
+def blur (image):
+    # create a copy of the image so the original image not affected
+    temp = SimpleImage.blank(image.width, image.height)
+    
+    for y in range(image.height):
+        for x in range(image.width):
+            old = image.get_pixel(x, y)
+            temp.set_pixel(x,y,old)
+    
+    for y in range(image.height):
+        for x in range(image.width):
+            redt = 0
+            bluet = 0
+            greent = 0
+
+            # for number of surrounding boxes
+            counter = 0
+            
+            for i in range(-1, 2,1): #height
+                for j in range(-1,2,1): #width 
+                    
+                    # check if out of column
+                    if y + i < 0 or  y + i > image.height - 1:
+                    
+                        continue
+                    
+                    if x + j < 0 or x + j > image.width - 1:
+                    
+                        continue
+                    
+                    previous = temp.get_pixel(x+j,y+i)
+                    
+                    redt += previous.red
+                    bluet += previous.blue
+                    greent += previous.green
+                    counter +=1
+                    
+            # average the total pixel for red, green and blue
+            
+            avred = round(redt / counter)
+            avgreen = round(greent / counter)
+            avblue = round(bluet / counter)
+            
+            
+            new = temp.get_pixel(x,y)
+            new.red = avred
+            new.blue = avblue
+            new.green = avgreen
+            image.set_pixel(x,y,new)
+    
+    return image
+    
+
+def grayscale (image):
+    
+    for pixel in image:
+        average = (pixel.red + pixel.blue + pixel.green) / 3.0
+        pixel.red = average
+        pixel.blue = average
+        pixel.green = average
+    
+    return image
+    
+
+def edges(image):
+    temp = SimpleImage.blank(image.width, image.height)
+    
+    # create a temporary copy
+    for y in range(image.height):
+        for x in range(image.width):
+            old = image.get_pixel(x, y)
+            temp.set_pixel(x,y,old)
+    
+    # arrays for factor for gx and gy
+    gx= [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+    gy = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+    
+    
+    # go to each pixel starting from top left corner
+    for y in range(temp.height):
+        for x in range(temp.width):
+            
+            red_gx = 0;
+            blue_gx = 0;
+            green_gx = 0;
+            red_gy = 0;
+            blue_gy = 0;
+            green_gy = 0;
+            
+
+            for j in range(-1, 2,1): #height
+                for i in range(-1,2,1): #width 
+                    
+                    # check if out of column
+                    if y + j < 0 or  y + j > temp.height - 1:
+                    
+                        continue
+                    
+                    if x + i < 0 or x + i > temp.width - 1:
+                    
+                        continue
+                    
+                    ed = temp.get_pixel(x+i,y+j )
+                    
+                    red_gx += ed.red * gx[i+1][j+1]
+                    blue_gx += ed.blue * gx[i+1][j+1]
+                    green_gx += ed.green *gx[i+1][j+1]
+                    
+                    red_gy += ed.red * gy[i+1][j+1]
+                    blue_gy += ed.blue * gy[i+1][j+1]
+                    green_gy += ed.green *gy[i+1][j+1]
+                    
+            
+            red = round(math.sqrt(red_gx * red_gx + red_gy * red_gy));
+            green = round(math.sqrt(green_gx * green_gx + green_gy * green_gy));
+            blue = round(math.sqrt(blue_gx * blue_gx + blue_gy * blue_gy));
+            
+            
+            # Cap it at 255
+            if red > 255:
+            
+                red = 255
+            
+            if green > 255:
+            
+                green = 255
+            
+            if blue > 255:
+            
+                blue = 255;
+            
+            # Assign new values to pixels
+            new = image.get_pixel(x,y)
+            
+            new.red = red
+            new.blue = blue
+            new.green = green
+            
+    
+    return image
+    
+def rotate(image):
+    #create input for angle to turn
+    height = image.height
+    width = image.width
+    temp = SimpleImage.blank(width, height)
+    # create duplicate 
+    # create a temporary copy
+    for y in range(height):
+        for x in range(width):
+            old = image.get_pixel(x, y)
+            temp.set_pixel(x,y,old)
+    while True: 
+        rotate = int(input("Rotate degree(CLOCKWISE) - 90, 180, 270, 360: "))
+        if rotate == 90:
+            #create a blank image with diff dimensions
+            image = SimpleImage.blank(height, width)
+            
+            for i in range(height):
+                for j in range(width):
+                    rot = temp.get_pixel(j, i)
+                    image.set_pixel(image.width - i-1,j,rot)
+            return image
+        
+
+        elif rotate == 180:
+            image = SimpleImage.blank(width, height)
+            for i in range(height):
+                for j in range(width):
+                    rot = temp.get_pixel(j, i)
+                    image.set_pixel(width -1 - j,height -1 -i ,rot)
+                
+            return image
+
+
+        elif rotate == 270:# anticlockwise turn 90 degree
+            #create a blank image with diff dimensions
+            image = SimpleImage.blank(height, width)
+            for i in range(height):
+                for j in range(width):
+                    rot = temp.get_pixel(j, i)
+                    image.set_pixel(i,image.height - 1 -j ,rot)
+            return image
+
+        elif rotate == 360:
+            return image
+
+        else:
+            print("rotate ended")
+            break
+
+
+def invert(image):
+    for pixel in image:
+        
+        pixel.red = 255-pixel.red
+        pixel.blue = 255-pixel.blue
+        pixel.green = 255-pixel.green
+    return image
+
+def sepia(image):
+    #make the feeling more old-timey
+    for pixel in image:
+        sepiaRed = round(0.393 * pixel.red + 0.769 * pixel.green + 0.189 * pixel.blue)
+        if sepiaRed > 255:
+            pixel.red = 255;
+            
+        else:
+            pixel.red = sepiaRed
+            
+        sepiaGreen = round(0.349 * pixel.red + 0.686 * pixel.green + 0.168 * pixel.blue)
+        if sepiaGreen > 255:
+            pixel.green = 255
+            
+        else:
+            pixel.green = sepiaGreen
+            
+        sepiaBlue = round(0.272 * pixel.red + 0.534 * pixel.green + 0.131 * pixel.blue)
+        if sepiaBlue > 255:
+            pixle.blue = 255
+            
+        else:
+            pixel.blue = sepiaBlue
+    return image
+    
+
+def get_file():
+    # Read image file path from user, or use the default file
+    filename = input('Enter image file (or press enter for default): ')
+    if filename == '':
+        filename = DEFAULT_FILE
+    return filename
+
+def get_func():
+    
+    print("Function : Blur-1 , grayscale-2, edges-3, rotate-4, invert-5, sepia-6, emboss-7")
+    func = int(input('Which function would you like to perform on the photos? '))
+    return func
+
+
+if __name__ == '__main__':
+    main()
