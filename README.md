@@ -8,7 +8,7 @@ To use the program, follow these steps:
 
 * Clone the repository to your local machine.
 * Ensure you have Python installed.
-* Install the necessary dependencies by running pip install -r requirements.txt.
+* Install the necessary dependencies by running pip install -r Requirements.txt.
 * Run the program by executing python image_manipulation.py in your terminal.
 * Follow the on-screen prompts to select an image and choose a function to apply.
 
